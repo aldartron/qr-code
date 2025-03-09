@@ -1,17 +1,14 @@
+import gleam/list
 import gleam/regexp
 import gleam/result
+import gleam/string
+import versions.{VersionSpec}
 
 // const latin_mode = <<0b0100:1>>
 
-pub type VersionSpec {
-  VersionSpec(version: Int, correction_level: CorrectionLevel)
-}
-
-pub type CorrectionLevel {
-  L
-  M
-  Q
-  H
+pub type QrError {
+  LengthTooBig(max: Int, was: Int)
+  InputIsEmpty
 }
 
 pub fn is_latin(input: String) -> Bool {
@@ -20,52 +17,26 @@ pub fn is_latin(input: String) -> Bool {
   |> result.unwrap(False)
 }
 
-pub fn get_min_version(lenght: Int) -> VersionSpec {
-  todo as "continue table and resolve"
-} 
+pub fn get_min_version(length: Int) -> Result(versions.VersionSpec, QrError) {
+  versions.capacities
+  |> list.find(fn(a) {
+    let #(l, _, _) = a
+    l >= length
+  })
+  |> result.map(fn(a) {
+    let #(_, v, c) = a
+    VersionSpec(version: v, correction: c)
+  })
+  |> result.replace_error(LengthTooBig(max: max_input_length, was: length))
+}
 
-const capacities = [
-  #(7, 1, H), #(11, 1, Q), #(14, 1, M), #(17, 1, L),
-  #(14, 2, H), #(20, 2, Q), #(26, 2, M), #(32, 2, L),
-  #(24, 3, H), #(32, 3, Q), #(42, 3, M), #(53, 3, L),
-  #(34, 4, H), #(46, 4, Q), #(62, 4, M), #(78, 4, L),
-  #(44, 5, H), #(60, 5, Q), #(84, 5, M), #(106, 5, L),
-  #(58, 6, H), #(74, 6, Q), #(106, 6, M), #(134, 6, L),
-  #(64, 7, H), #(86, 7, Q), #(122, 7, M), #(154, 7, L),
-  #(84, 8, H), #(108, 8, Q), #(152, 8, M), #(192, 8, L),
-  #(98, 9, H), #(130, 9, Q), #(180, 9, M), #(230, 9, L),
-  #(119, 10, H), #(151, 10, Q), #(213, 10, M), #(271, 10, L),
+const max_input_length = 500
 
-  #(7, 11, H), #(11, 11, Q), #(14, 11, M), #(17, 11, L),
-  #(7, 12, H), #(11, 12, Q), #(14, 12, M), #(17, 12, L),
-  #(7, 13, H), #(11, 13, Q), #(14, 13, M), #(17, 13, L),
-  #(7, 14, H), #(11, 14, Q), #(14, 14, M), #(17, 14, L),
-  #(7, 15, H), #(11, 15, Q), #(14, 15, M), #(17, 15, L),
-  #(7, 16, H), #(11, 16, Q), #(14, 16, M), #(17, 16, L),
-  #(7, 17, H), #(11, 17, Q), #(14, 17, M), #(17, 17, L),
-  #(7, 18, H), #(11, 18, Q), #(14, 18, M), #(17, 18, L),
-  #(7, 19, H), #(11, 19, Q), #(14, 19, M), #(17, 19, L),
-  #(7, 20, H), #(11, 20, Q), #(14, 20, M), #(17, 20, L),
-
-  #(7, 21, H), #(11, 21, Q), #(14, 21, M), #(17, 21, L),
-  #(7, 22, H), #(11, 22, Q), #(14, 22, M), #(17, 22, L),
-  #(7, 23, H), #(11, 23, Q), #(14, 23, M), #(17, 23, L),
-  #(7, 24, H), #(11, 24, Q), #(14, 24, M), #(17, 24, L),
-  #(7, 25, H), #(11, 25, Q), #(14, 25, M), #(17, 25, L),
-  #(7, 26, H), #(11, 26, Q), #(14, 26, M), #(17, 26, L),
-  #(7, 27, H), #(11, 27, Q), #(14, 27, M), #(17, 27, L),
-  #(7, 28, H), #(11, 28, Q), #(14, 28, M), #(17, 28, L),
-  #(7, 29, H), #(11, 29, Q), #(14, 29, M), #(17, 29, L),
-  #(7, 30, H), #(11, 30, Q), #(14, 30, M), #(17, 30, L),
-
-  #(7, 31, H), #(11, 31, Q), #(14, 31, M), #(17, 31, L),
-  #(7, 32, H), #(11, 32, Q), #(14, 32, M), #(17, 32, L),
-  #(7, 33, H), #(11, 33, Q), #(14, 33, M), #(17, 33, L),
-  #(7, 34, H), #(11, 34, Q), #(14, 34, M), #(17, 34, L),
-  #(7, 35, H), #(11, 35, Q), #(14, 35, M), #(17, 35, L),
-  #(7, 36, H), #(11, 36, Q), #(14, 36, M), #(17, 36, L),
-  #(7, 37, H), #(11, 37, Q), #(14, 37, M), #(17, 37, L),
-  #(7, 38, H), #(11, 38, Q), #(14, 38, M), #(17, 38, L),
-  #(7, 39, H), #(11, 39, Q), #(14, 39, M), #(17, 39, L),
-  #(7, 40, H), #(11, 40, Q), #(14, 40, M), #(17, 40, L),
-]
+pub fn check_length(input: String) -> Result(String, QrError) {
+  case string.length(input) {
+    0 -> Error(InputIsEmpty)
+    i if i > max_input_length ->
+      Error(LengthTooBig(max: max_input_length, was: i))
+    _ -> Ok(input)
+  }
+}
